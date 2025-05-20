@@ -1,0 +1,185 @@
+this is my full funciton
+
+"use client";
+
+import { AboutBusinessInformationForm } from "@/app/(auth)/_components/supplier/form-sections/about-business-information-form";
+import { CeoInformationForm } from "@/app/(auth)/_components/supplier/form-sections/ceo-information-form";
+import { CompanyInformationForm } from "@/app/(auth)/_components/supplier/form-sections/company-information-form";
+import { OwnerInformationForm } from "@/app/(auth)/_components/supplier/form-sections/owner-information-form";
+import { useGetLoggedInUserQuery } from "@/redux/api/authApi";
+import { useUpdateMeMutation } from "@/redux/api/userApi";
+import type { FormData } from "@/types/EditAccountType";
+import { CompanyDataType, RootState } from "@/types/EditAccountType";
+import React, { useState } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import { useSelector } from "react-redux";
+
+export default function EditAccount() {
+  const methods = useForm<FormData>();
+  const user = useSelector((state: RootState) => state?.user?.user?.user);
+  const { data } = useGetLoggedInUserQuery(null);
+  const companyData: CompanyDataType = data?.companyInfo;
+
+  // console.log("User Data", data);
+
+  const [tradeLicenseFile, setTradeLicenseFile] = useState<File | null>(null);
+  const [companyLogoFile, setCompanyLogoFile] = useState<File | null>(null);
+
+  const handleImageUpload =
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (field === "companyInformation.tradeLicense") {
+          setTradeLicenseFile(file);
+        } else if (field === "companyInformation.logo") {
+          setCompanyLogoFile(file);
+        }
+      }
+    };
+
+  const flattenData = (data: FormData) => {
+    return {
+      ...data.ceoInformation,
+      ...data.companyInformation,
+      ...data.businessInformation,
+      ...data.ownerInformation,
+    };
+  };
+
+  const [updateUser] = useUpdateMeMutation();
+
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
+    console.log(data);
+
+    try {
+      const formData = new FormData();
+      const flattenedData = flattenData(data);
+
+      console.log("New Data", flattenData);
+
+      // Append files (note the corrected field name)
+      if (companyLogoFile) formData.append("logo", companyLogoFile);
+      if (tradeLicenseFile) formData.append("tradeLicense", tradeLicenseFile); // Fixed typo
+
+      // Append JSON data
+      formData.append("bodyData", JSON.stringify(flattenedData));
+
+      // Send to correct endpoint with proper headers
+      const response = await updateUser({
+        body: formData,
+        // Add headers if needed (like authorization)
+      }).unwrap();
+
+      console.log("Update successful:", response);
+    } catch (error) {
+      console.error("Update failed:", error);
+    }
+  };
+
+  return (
+    <div>
+      <div className="mb-10">
+        <h1 className="text-3xl md:text-5xl font-bold font-hanken mb-2">
+          Welcome {user?.firstName} {" " + user?.lastName}
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Please Update Your Buyer Account
+        </p>
+      </div>
+
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)}>
+          <CompanyInformationForm
+            companyData={companyData}
+            handleImageUpload={handleImageUpload}
+            tradeLicenseFile={tradeLicenseFile}
+            companyLogoFile={companyLogoFile}
+          />
+          <AboutBusinessInformationForm companyData={companyData} />
+          <CeoInformationForm ceoInfo={data} />
+          <OwnerInformationForm ownerInfo={companyData} />
+
+          <div className="text-center">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-6 py-2 rounded-md mt-10 text-center"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+      </FormProvider>
+    </div>
+  );
+}
+
+
+-------------------------------------
+
+this is data get form   the  console.log("New Data", flattenData(data));
+
+New Data: {
+  "about": "Est sed corrupti et",
+  "address": "Mcdonald and Sutton LLC",
+  "businessIdentification": "Hawkins and Goff Plc",
+  "businessType": ["exporter", "tradingCompany", "wholesaler"],
+  "category": "food",
+  "companyEstablish": "2001",
+  "companyWebsite": "https://www.paxabuhu.net",
+  "controlPolicy": "yes",
+  "country": "Afghanistan",
+  "district": "Tempore facere aspe",
+  "email": "vequzef@mailinator.com",
+  "firstName": "Lucius",
+  "lastName": "Pollard",
+  "mainProducts": "Voluptatem sit deb",
+  "name": "Terrell and Hendricks Associates",
+  "noWebsite": true,
+  "numberOfEmployees": "501-1000",
+  "ownerEmail": "haqos@mailinator.com",
+  "ownerName": "Dakota Wade",
+  "ownerPhone": "+1 (516) 696-1345",
+  "phoneNumber": "+1 (737) 602-4327",
+  "subCategory": "",
+  "whatsappNumber": "+1 (608) 992-4859",
+  "zipCode": "69486"
+}
+
+------------------------------------
+
+I want the data from the console in this format
+
+{
+  "firstName": "Rahi",
+  "lastName": "Doe",
+  "phoneNumber": "+1234567890",
+  "whatsappNumber": "+1234567890",
+  "companyInfo": {
+    "countryName": "USA",
+    "companyName": "Doe Enterprises",
+    "companyEstablish": "2015",
+    "numberOfEmployees": 50,
+    "companyWebsite": "https://doe-enterprises.com",
+    "businessIdentification": 123456789,
+    "businessType": "LLC",
+    "businessCategory": "Technology",
+    "subCategory": "Software Development",
+    "about": "We specialize in custom software solutions.",
+    "field": "IT Services",
+    "mainProducts": "SaaS applications, Web Development",
+    "controlPolicy": true,
+    "companyAddress": "1234 Silicon Valley, CA",
+    "zipCode": "94016",
+    "district": "California",
+    "ownerName": "John Doe",
+    "ownerEmail": "owner@example.com",
+    "ownerPhone": "+1234567890"
+  }
+}
+
+
+-----------------------------
+Give me 2 file versions, 1 is EditAccount.tsx, 2 is transformData.ts
+
+EditAccount.tsx file will define all the functionality.
+transformData.ts will define all the functionality.
