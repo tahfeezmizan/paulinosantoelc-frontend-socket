@@ -52,7 +52,15 @@ export function LoginForm() {
       const res = (await loginUser(data).unwrap()) as LoginResponse;
 
       if (res?.success) {
-        dispatch(setUser(res));
+        // dispatch(setUser(res));
+        dispatch(
+          setUser({
+            data: {
+              accessToken: res.data?.data?.accessToken,
+              role: res.data?.data?.role,
+            },
+          })
+        );
         toast.success(res?.message || "Login successful");
         router?.push("/");
       } else {
