@@ -1,37 +1,46 @@
 // eslint-disable-line @typescript-eslint/no-explicit-any
-// create slice to store data and remove data of user
-
 import { createSlice } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 import { RootState } from "../store";
 
 interface UserState {
-  user: any; 
+  user: any;
 }
 
 const initialState: UserState = {
-  user: null, // Default value
+  user: null,
 };
+
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload.data;
-      console.log(action.payload.data);
-      // console.log(state.user);
       const accessToken = action.payload.data.accessToken;
 
-      // Save accessToken to localStorage (client-side only)
-      if (typeof window !== "undefined") {
+      // Save token both in cookies and localStorage (optional)
+      if (typeof window !== "undefined" && accessToken) {
+        // Set token in Cookies (expires in 7 days)
+        Cookies.set("accessToken", accessToken, {
+          expires: 7, // days
+          secure: process.env.NODE_ENV === "production", // only over HTTPS
+          sameSite: "strict",
+        });
+
+        // Optional: also store in localStorage
         localStorage.setItem("accessToken", accessToken);
       }
     },
+
     removeUser: (state) => {
       state.user = null;
       if (typeof window !== "undefined") {
+        // Remove from localStorage
         localStorage.removeItem("accessToken");
         localStorage.removeItem("email");
+
+        // Remove from Cookies
         Cookies.remove("accessToken");
       }
     },
